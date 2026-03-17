@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"bun run dev:vite\" \"bun run dev:electron\"",
     "dev:vite": "vite",
-    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.node.json && electron . --dev",
+    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.node.json && electron . --dev --ozone-platform=x11",
     "build": "bun run build:main && bun run build:renderer",
     "build:main": "tsc -p tsconfig.node.json",
     "build:renderer": "vite build",

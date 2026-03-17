@@ -5,7 +5,7 @@ const ASSETS_DIR = path.join(__dirname, '../../../assets')
 
 export function getTrayIcon(): string {
   const isDark = nativeTheme.shouldUseDarkColors
-  const iconName = isDark ? 'whatsapp-outline-white-padded.png' : 'whatsapp-outline-black-padded.png'
+  const iconName = isDark ? 'whatsapp-outline-white.png' : 'whatsapp-outline-black.png'
   return path.join(ASSETS_DIR, iconName)
 }
 

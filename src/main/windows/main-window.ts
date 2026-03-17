@@ -28,7 +28,7 @@ export function createMainWindow(): BrowserWindow {
       experimentalFeatures: false,
       enableBlinkFeatures: '',
       disableBlinkFeatures: 'Auxclick', // Prevent middle-click attacks
-      preload: path.join(__dirname, '../preload/main-preload.js')
+      preload: path.join(__dirname, '../../preload/main-preload.js')
     }
   })
   
@@ -81,14 +81,14 @@ export function createMainWindow(): BrowserWindow {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           "default-src 'self' https://web.whatsapp.com https://*.whatsapp.com https://*.whatsapp.net; " +
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://web.whatsapp.com https://*.whatsapp.com; " +
-          "style-src 'self' 'unsafe-inline' https://web.whatsapp.com; " +
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://web.whatsapp.com https://*.whatsapp.com https://*.whatsapp.net; " +
+          "style-src 'self' 'unsafe-inline' https://web.whatsapp.com https://*.whatsapp.com https://*.whatsapp.net; " +
           "img-src 'self' data: blob: https: http:; " +
           "media-src 'self' data: blob: https: http: mediastream:; " +
           "connect-src 'self' https: wss: blob:; " +
-          "font-src 'self' data: https://web.whatsapp.com; " +
+          "font-src 'self' data: https://web.whatsapp.com https://*.whatsapp.com https://*.whatsapp.net; " +
           "worker-src 'self' blob:; " +
-          "frame-src 'none'; " +
+          "frame-src https://*.whatsapp.net https://*.whatsapp.com; " +
           "object-src 'none'; " +
           "base-uri 'self';"
         ]
