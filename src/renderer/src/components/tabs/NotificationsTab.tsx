@@ -1,0 +1,85 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { useSettings } from '@/lib/ipc'
+
+export default function NotificationsTab() {
+  const { settings, setSetting } = useSettings()
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Notifications</CardTitle>
+        <CardDescription>Manage notification preferences</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notifications-enabled">Enable notifications</Label>
+            <p className="text-sm text-muted-foreground">
+              Show desktop notifications for new messages
+            </p>
+          </div>
+          <Switch
+            id="notifications-enabled"
+            checked={settings.notificationsEnabled}
+            onCheckedChange={(val) => setSetting('notificationsEnabled', val)}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="show-preview">Show message preview</Label>
+            <p className="text-sm text-muted-foreground">
+              Display message content in notifications
+            </p>
+          </div>
+          <Switch
+            id="show-preview"
+            checked={settings.showPreview}
+            onCheckedChange={(val) => setSetting('showPreview', val)}
+            disabled={!settings.notificationsEnabled}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notification-sound">Play notification sound</Label>
+            <p className="text-sm text-muted-foreground">
+              Play a sound when you receive notifications
+            </p>
+          </div>
+          <Switch
+            id="notification-sound"
+            checked={settings.notificationSound}
+            onCheckedChange={(val) => setSetting('notificationSound', val)}
+            disabled={!settings.notificationsEnabled}
+          />
+        </div>
+        
+        <div className="pt-6 border-t">
+          <h3 className="text-sm font-medium mb-4">Do Not Disturb</h3>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="dnd-mode">Enable Do Not Disturb</Label>
+              <p className="text-sm text-muted-foreground">
+                Suppress all notifications
+              </p>
+            </div>
+            <Switch
+              id="dnd-mode"
+              checked={settings.dndMode}
+              onCheckedChange={(val) => setSetting('dndMode', val)}
+            />
+          </div>
+          
+          <p className="text-sm text-muted-foreground mt-4">
+            You can also toggle DND from the tray menu or use <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+Shift+D</kbd>
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

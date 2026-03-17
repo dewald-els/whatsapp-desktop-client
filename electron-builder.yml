@@ -1,0 +1,34 @@
+appId: com.whatsapp.desktop.unofficial
+productName: WhatsApp Desktop
+copyright: Copyright © 2026
+directories:
+  output: release
+  buildResources: assets
+files:
+  - dist/**/*
+  - assets/**/*
+  - package.json
+  - node_modules/**/*
+asar: true
+linux:
+  target:
+    - target: deb
+      arch:
+        - x64
+  category: Network;InstantMessaging
+  icon: assets/whatsapp.png
+  desktop:
+    entry:
+      Name: WhatsApp Desktop
+      Comment: Unofficial WhatsApp Desktop Client
+      GenericName: Instant Messaging
+      Categories: Network;InstantMessaging;Chat
+      MimeType: x-scheme-handler/whatsapp
+      Keywords: whatsapp;messaging;chat
+      StartupWMClass: whatsapp-desktop
+  maintainer: Personal Use
+  synopsis: Unofficial WhatsApp Desktop Client
+  description: |
+    WhatsApp Desktop is an unofficial desktop client for WhatsApp Web
+    with native Linux features including system tray integration,
+    global keyboard shortcuts, and native notifications.
