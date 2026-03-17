@@ -1,6 +1,5 @@
 # WhatsApp Desktop for Linux
-
-A feature-rich WhatsApp Desktop client for Linux with native system integration, built with Electron, React 19, and shadcn/ui.
+A silly WhatsApp Desktop client for Linux with native system integration, built with Electron, React 19, and shadcn/ui. Just for me for fun! Not intended for production use
 
 ## Quick Start
 
