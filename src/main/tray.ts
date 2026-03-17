@@ -1,7 +1,6 @@
 import { Tray, Menu, nativeTheme, app } from 'electron'
 import { getTrayIcon } from './utils/theme-detector'
 import { getMainWindow, toggleMainWindow, setQuitting } from './windows/main-window'
-import { createSettingsWindow } from './windows/settings-window'
 import store from './store'
 
 let tray: Tray | null = null
@@ -38,11 +37,6 @@ export function updateTrayMenu() {
       label: mainWindow?.isVisible() ? 'Hide WhatsApp' : 'Show WhatsApp',
       click: () => toggleMainWindow()
     },
-    {
-      label: 'Settings',
-      accelerator: 'Ctrl+,',
-      click: () => createSettingsWindow()
-    },
     { type: 'separator' },
     {
       label: 'Do Not Disturb',
@@ -75,13 +69,6 @@ export function toggleDND() {
   }
   
   updateTrayMenu()
-  
-  // Notify settings window if open
-  const { getSettingsWindow } = require('./windows/settings-window')
-  const settingsWindow = getSettingsWindow()
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.webContents.send('dnd-changed', newState)
-  }
 }
 
 export function getTray(): Tray | null {

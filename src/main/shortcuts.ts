@@ -1,6 +1,5 @@
 import { globalShortcut, app } from 'electron'
 import { getMainWindow, toggleMainWindow } from './windows/main-window'
-import { createSettingsWindow } from './windows/settings-window'
 import { toggleDND } from './tray'
 import store from './store'
 import { getSystemInfo } from './utils/system-info'
@@ -11,11 +10,6 @@ export function registerShortcuts() {
       key: 'CommandOrControl+Shift+W',
       description: 'Show/hide main window',
       handler: toggleMainWindow
-    },
-    {
-      key: 'CommandOrControl+,',
-      description: 'Open settings',
-      handler: () => createSettingsWindow()
     },
     {
       key: 'CommandOrControl+Shift+D',
