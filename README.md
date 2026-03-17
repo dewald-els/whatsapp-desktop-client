@@ -114,6 +114,15 @@ For security status report:
    bun run package:rpm
    ```
    The packages will be in the `release/` directory.
+   
+   **Note:** Building RPM packages requires the `rpmbuild` tool:
+   ```bash
+   # On Debian/Ubuntu
+   sudo apt-get install rpm
+   
+   # On Fedora/RHEL
+   sudo dnf install rpm-build
+   ```
 
 ## Development
 
