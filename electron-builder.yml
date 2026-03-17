@@ -15,6 +15,9 @@ linux:
     - target: deb
       arch:
         - x64
+    - target: rpm
+      arch:
+        - x64
   category: Network;InstantMessaging
   icon: assets/whatsapp.png
   desktop:
@@ -27,6 +30,7 @@ linux:
       Keywords: whatsapp;messaging;chat
       StartupWMClass: whatsapp-desktop
   maintainer: Personal Use
+  vendor: Personal Use
   synopsis: Unofficial WhatsApp Desktop Client
   description: |
     WhatsApp Desktop is an unofficial desktop client for WhatsApp Web

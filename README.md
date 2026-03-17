@@ -59,7 +59,7 @@ For security status report:
 
 ## Installation
 
-### From .deb Package
+### From .deb Package (Debian/Ubuntu)
 
 1. Download the latest `.deb` package from releases
 2. Install with:
@@ -69,6 +69,21 @@ For security status report:
 3. If there are dependency issues:
    ```bash
    sudo apt-get install -f
+   ```
+
+### From .rpm Package (Fedora/RHEL/openSUSE)
+
+1. Download the latest `.rpm` package from releases
+2. Install with:
+   
+   **Fedora/RHEL:**
+   ```bash
+   sudo dnf install whatsapp-desktop-1.0.0.x86_64.rpm
+   ```
+   
+   **openSUSE:**
+   ```bash
+   sudo zypper install whatsapp-desktop-1.0.0.x86_64.rpm
    ```
 
 ### From Source
@@ -89,11 +104,16 @@ For security status report:
    bun run build
    ```
 
-4. Package as .deb:
+4. Package as .deb or .rpm:
    ```bash
+   # Build both .deb and .rpm
    bun run package
+   
+   # Or build specific format
+   bun run package:deb
+   bun run package:rpm
    ```
-   The .deb file will be in the `release/` directory.
+   The packages will be in the `release/` directory.
 
 ## Development
 

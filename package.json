@@ -10,7 +10,9 @@
     "build": "bun run build:main && bun run build:renderer",
     "build:main": "tsc -p tsconfig.node.json",
     "build:renderer": "vite build",
-    "package": "bun run build && electron-builder --linux deb",
+    "package": "bun run build && electron-builder --linux deb rpm",
+    "package:deb": "bun run build && electron-builder --linux deb",
+    "package:rpm": "bun run build && electron-builder --linux rpm",
     "start": "electron ."
   },
   "keywords": ["whatsapp", "electron", "desktop"],
