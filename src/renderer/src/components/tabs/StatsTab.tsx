@@ -24,7 +24,6 @@ interface UsageStats {
   totalNotifications: number
   appStartCount: number
   lastLaunch: string
-  dailyStats: DailyStats[]
 }
 
 interface DailyStats {
@@ -181,7 +180,7 @@ export default function StatsTab() {
             Desktop app stats only • Your WhatsApp messages are not tracked
           </p>
           <p className="text-xs text-muted-foreground">
-            Data: ~/.local/share/whatsapp-desktop/usage-stats.json
+            Data: ~/.local/share/whatsapp-desktop/usage-stats.db (unlimited history)
           </p>
         </div>
         <Button variant="destructive" size="sm" onClick={handleReset}>
@@ -282,6 +281,13 @@ export default function StatsTab() {
                 onClick={() => setDaysToShow(90)}
               >
                 90 days
+              </Button>
+              <Button
+                variant={daysToShow === 0 ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDaysToShow(0)}
+              >
+                All Time
               </Button>
             </div>
           </div>

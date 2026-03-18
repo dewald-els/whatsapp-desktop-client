@@ -119,3 +119,9 @@ export function getSettingsManager(): SettingsManager {
   }
   return settingsManager
 }
+
+// For testing only - reset the singleton
+export function __resetSettingsManagerForTests(): void {
+  settingsManager = null
+}
+
