@@ -23,7 +23,8 @@ export function createMainWindow(): BrowserWindow {
       partition: 'persist:whatsapp',
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      sandbox: false, // Need to disable sandbox for webview tag
+      webviewTag: true, // Enable webview tag
       webSecurity: true,
       allowRunningInsecureContent: false,
       experimentalFeatures: false,
@@ -189,9 +190,13 @@ export function createMainWindow(): BrowserWindow {
     }
   })
   
-  // Load WhatsApp Web with custom user agent
-  const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-  mainWindow.loadURL('https://web.whatsapp.com', { userAgent })
+  // Load React wrapper (which contains the WhatsApp webview)
+  const isDev = process.argv.includes('--dev')
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:5173/main-window.html')
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../renderer/main-window.html'))
+  }
   
   // Show window when ready to avoid blank screen
   mainWindow.webContents.on('did-finish-load', () => {

@@ -7,7 +7,13 @@ export default defineConfig({
   root: 'src/renderer',
   build: {
     outDir: '../../dist/renderer',
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        settings: path.resolve(__dirname, 'src/renderer/index.html'),
+        main: path.resolve(__dirname, 'src/renderer/main-window.html')
+      }
+    }
   },
   resolve: {
     alias: {
