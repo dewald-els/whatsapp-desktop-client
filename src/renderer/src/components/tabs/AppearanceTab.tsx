@@ -1,12 +1,12 @@
+import { Palette } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useSettings } from '@/lib/ipc'
-import { Palette } from 'lucide-react'
 
 export default function AppearanceTab() {
   const { settings, setSetting } = useSettings()
-  
+
   return (
     <Card>
       <CardHeader>
@@ -16,7 +16,7 @@ export default function AppearanceTab() {
         </CardTitle>
         <CardDescription>Customize the look and feel</CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         <div>
           <Label className="text-base">Theme</Label>
@@ -25,7 +25,7 @@ export default function AppearanceTab() {
           </p>
           <RadioGroup
             value={settings.theme || 'system'}
-            onValueChange={(val) => setSetting('theme', val)}
+            onValueChange={val => setSetting('theme', val)}
             className="space-y-3"
           >
             <div className="flex items-center space-x-3 space-y-0">
@@ -34,14 +34,14 @@ export default function AppearanceTab() {
                 Light
               </Label>
             </div>
-            
+
             <div className="flex items-center space-x-3 space-y-0">
               <RadioGroupItem value="dark" id="dark" />
               <Label htmlFor="dark" className="font-normal cursor-pointer">
                 Dark
               </Label>
             </div>
-            
+
             <div className="flex items-center space-x-3 space-y-0">
               <RadioGroupItem value="system" id="system" />
               <Label htmlFor="system" className="font-normal cursor-pointer">
@@ -50,7 +50,7 @@ export default function AppearanceTab() {
             </div>
           </RadioGroup>
         </div>
-        
+
         <div className="pt-6 border-t">
           <p className="text-sm text-muted-foreground">
             <strong>Note:</strong> Theme applies to the settings window only. The system tray icon

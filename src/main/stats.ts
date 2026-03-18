@@ -1,7 +1,7 @@
-import { app } from 'electron'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import Database from 'better-sqlite3'
-import * as path from 'path'
-import * as fs from 'fs'
+import { app } from 'electron'
 
 export interface DailyStats {
   date: string // YYYY-MM-DD format
@@ -27,18 +27,19 @@ class StatsManager {
 
   constructor() {
     // Use OS-specific data directories
-    const dataPath = process.platform === 'linux' 
-      ? path.join(app.getPath('home'), '.local', 'share', 'whatsapp-desktop')
-      : app.getPath('userData')
-    
+    const dataPath =
+      process.platform === 'linux'
+        ? path.join(app.getPath('home'), '.local', 'share', 'whatsapp-desktop')
+        : app.getPath('userData')
+
     // Ensure directory exists
     if (!fs.existsSync(dataPath)) {
       fs.mkdirSync(dataPath, { recursive: true })
     }
-    
+
     const dbPath = path.join(dataPath, 'usage-stats.db')
     this.db = new Database(dbPath)
-    
+
     this.initDatabase()
     this.migrateFromJSON(dataPath)
   }
@@ -78,16 +79,18 @@ class StatsManager {
     // Initialize summary row if it doesn't exist
     const summary = this.db.prepare('SELECT id FROM summary WHERE id = 1').get()
     if (!summary) {
-      this.db.prepare(`
+      this.db
+        .prepare(`
         INSERT INTO summary (id, totalSessions, totalUsageTime, totalNotifications, appStartCount, lastLaunch)
         VALUES (1, 0, 0, 0, 0, ?)
-      `).run(new Date().toISOString())
+      `)
+        .run(new Date().toISOString())
     }
   }
 
   private migrateFromJSON(dataPath: string): void {
     const jsonPath = path.join(dataPath, 'usage-stats.json')
-    
+
     if (!fs.existsSync(jsonPath)) {
       return
     }
@@ -97,7 +100,8 @@ class StatsManager {
       const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))
 
       // Migrate summary data
-      this.db.prepare(`
+      this.db
+        .prepare(`
         UPDATE summary 
         SET totalSessions = ?, 
             totalUsageTime = ?, 
@@ -105,13 +109,14 @@ class StatsManager {
             appStartCount = ?,
             lastLaunch = ?
         WHERE id = 1
-      `).run(
-        data.totalSessions || 0,
-        data.totalUsageTime || 0,
-        data.totalNotifications || 0,
-        data.appStartCount || 0,
-        data.lastLaunch || new Date().toISOString()
-      )
+      `)
+        .run(
+          data.totalSessions || 0,
+          data.totalUsageTime || 0,
+          data.totalNotifications || 0,
+          data.appStartCount || 0,
+          data.lastLaunch || new Date().toISOString()
+        )
 
       // Migrate daily stats
       if (data.dailyStats && Array.isArray(data.dailyStats)) {
@@ -135,7 +140,7 @@ class StatsManager {
       }
 
       // Backup old JSON file and delete
-      fs.renameSync(jsonPath, jsonPath + '.backup')
+      fs.renameSync(jsonPath, `${jsonPath}.backup`)
       console.log('[Stats] Migration complete. Old file backed up as usage-stats.json.backup')
     } catch (error) {
       console.error('[Stats] Migration failed:', error)
@@ -149,60 +154,72 @@ class StatsManager {
 
   private ensureTodayStats(): void {
     const today = this.getTodayKey()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       INSERT OR IGNORE INTO daily_stats (date) VALUES (?)
-    `).run(today)
+    `)
+      .run(today)
   }
 
   // Track app launch
   trackAppLaunch(): void {
-    this.db.prepare(`
+    this.db
+      .prepare(`
       UPDATE summary 
       SET appStartCount = appStartCount + 1,
           lastLaunch = ?
       WHERE id = 1
-    `).run(new Date().toISOString())
+    `)
+      .run(new Date().toISOString())
   }
 
   // Track session start
   startSession(): void {
     this.currentSessionStart = Date.now()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       UPDATE summary 
       SET totalSessions = totalSessions + 1
       WHERE id = 1
-    `).run()
+    `)
+      .run()
 
     this.ensureTodayStats()
     const today = this.getTodayKey()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       UPDATE daily_stats 
       SET sessionCount = sessionCount + 1
       WHERE date = ?
-    `).run(today)
+    `)
+      .run(today)
   }
 
   // Track session end
   endSession(): void {
     if (this.currentSessionStart) {
       const duration = Math.floor((Date.now() - this.currentSessionStart) / 1000)
-      
-      this.db.prepare(`
+
+      this.db
+        .prepare(`
         UPDATE summary 
         SET totalUsageTime = totalUsageTime + ?
         WHERE id = 1
-      `).run(duration)
+      `)
+        .run(duration)
 
       const today = this.getTodayKey()
-      this.db.prepare(`
+      this.db
+        .prepare(`
         UPDATE daily_stats 
         SET totalSessionDuration = totalSessionDuration + ?
         WHERE date = ?
-      `).run(duration, today)
-      
+      `)
+        .run(duration, today)
+
       this.currentSessionStart = null
     }
   }
@@ -211,73 +228,83 @@ class StatsManager {
   trackWindowFocus(): void {
     this.ensureTodayStats()
     const today = this.getTodayKey()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       UPDATE daily_stats 
       SET windowFocusCount = windowFocusCount + 1
       WHERE date = ?
-    `).run(today)
+    `)
+      .run(today)
   }
 
   // Track notification
   trackNotification(): void {
-    this.db.prepare(`
+    this.db
+      .prepare(`
       UPDATE summary 
       SET totalNotifications = totalNotifications + 1
       WHERE id = 1
-    `).run()
+    `)
+      .run()
 
     this.ensureTodayStats()
     const today = this.getTodayKey()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       UPDATE daily_stats 
       SET notificationsSent = notificationsSent + 1
       WHERE date = ?
-    `).run(today)
+    `)
+      .run(today)
   }
 
   // Track settings opened
   trackSettingsOpened(): void {
     this.ensureTodayStats()
     const today = this.getTodayKey()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       UPDATE daily_stats 
       SET settingsOpened = settingsOpened + 1
       WHERE date = ?
-    `).run(today)
+    `)
+      .run(today)
   }
 
   // Track DND toggle
   trackDndToggle(): void {
     this.ensureTodayStats()
     const today = this.getTodayKey()
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(`
       UPDATE daily_stats 
       SET dndToggleCount = dndToggleCount + 1
       WHERE date = ?
-    `).run(today)
+    `)
+      .run(today)
   }
 
   // Get summary stats
   getStats(): UsageStats {
     const summary = this.db.prepare('SELECT * FROM summary WHERE id = 1').get() as any
-    
+
     return {
       totalSessions: summary.totalSessions || 0,
       totalUsageTime: summary.totalUsageTime || 0,
       totalNotifications: summary.totalNotifications || 0,
       appStartCount: summary.appStartCount || 0,
-      lastLaunch: summary.lastLaunch || new Date().toISOString()
+      lastLaunch: summary.lastLaunch || new Date().toISOString(),
     }
   }
 
   // Get stats for last N days (default 30, use 0 for all time)
   getRecentStats(days: number = 30): DailyStats[] {
     let query: string
-    
+
     if (days === 0) {
       // Get all stats
       query = 'SELECT * FROM daily_stats ORDER BY date DESC'
@@ -285,9 +312,9 @@ class StatsManager {
       // Get last N days
       query = `SELECT * FROM daily_stats ORDER BY date DESC LIMIT ${days}`
     }
-    
+
     const rows = this.db.prepare(query).all() as any[]
-    
+
     return rows.map(row => ({
       date: row.date,
       sessionCount: row.sessionCount || 0,
@@ -295,18 +322,20 @@ class StatsManager {
       windowFocusCount: row.windowFocusCount || 0,
       notificationsSent: row.notificationsSent || 0,
       settingsOpened: row.settingsOpened || 0,
-      dndToggleCount: row.dndToggleCount || 0
+      dndToggleCount: row.dndToggleCount || 0,
     }))
   }
 
   // Get stats for a specific date range
   getStatsByDateRange(startDate: string, endDate: string): DailyStats[] {
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(`
       SELECT * FROM daily_stats 
       WHERE date BETWEEN ? AND ?
       ORDER BY date DESC
-    `).all(startDate, endDate) as any[]
-    
+    `)
+      .all(startDate, endDate) as any[]
+
     return rows.map(row => ({
       date: row.date,
       sessionCount: row.sessionCount || 0,
@@ -314,7 +343,7 @@ class StatsManager {
       windowFocusCount: row.windowFocusCount || 0,
       notificationsSent: row.notificationsSent || 0,
       settingsOpened: row.settingsOpened || 0,
-      dndToggleCount: row.dndToggleCount || 0
+      dndToggleCount: row.dndToggleCount || 0,
     }))
   }
 
@@ -327,7 +356,8 @@ class StatsManager {
   // Reset all stats
   resetStats(): void {
     this.db.exec('DELETE FROM daily_stats')
-    this.db.prepare(`
+    this.db
+      .prepare(`
       UPDATE summary 
       SET totalSessions = 0,
           totalUsageTime = 0,
@@ -335,7 +365,8 @@ class StatsManager {
           appStartCount = 0,
           lastLaunch = ?
       WHERE id = 1
-    `).run(new Date().toISOString())
+    `)
+      .run(new Date().toISOString())
   }
 
   // Close database connection
@@ -366,10 +397,9 @@ export function __resetStatsManagerForTests(): void {
   if (statsManager) {
     try {
       statsManager.close()
-    } catch (e) {
+    } catch (_e) {
       // Ignore close errors
     }
   }
   statsManager = null
 }
-

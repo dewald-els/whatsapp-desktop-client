@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import { app } from 'electron'
 
 const LOG_DIR = path.join(app.getPath('userData'), 'logs')
@@ -13,31 +13,37 @@ if (!fs.existsSync(LOG_DIR)) {
 
 interface SecurityEvent {
   timestamp: string
-  type: 'navigation_blocked' | 'permission_denied' | 'window_blocked' | 'cert_error' | 'csp_violation' | 'suspicious_activity'
+  type:
+    | 'navigation_blocked'
+    | 'permission_denied'
+    | 'window_blocked'
+    | 'cert_error'
+    | 'csp_violation'
+    | 'suspicious_activity'
   details: string
   severity: 'low' | 'medium' | 'high' | 'critical'
 }
 
 export function logSecurityEvent(event: SecurityEvent) {
   const logEntry = `[${event.timestamp}] [${event.severity.toUpperCase()}] [${event.type}] ${event.details}\n`
-  
+
   // Console output
   if (event.severity === 'high' || event.severity === 'critical') {
     console.error('SECURITY:', logEntry.trim())
   } else {
     console.log('SECURITY:', logEntry.trim())
   }
-  
+
   // File logging
   try {
     // Rotate log if too large
     if (fs.existsSync(LOG_FILE)) {
       const stats = fs.statSync(LOG_FILE)
       if (stats.size > MAX_LOG_SIZE) {
-        fs.renameSync(LOG_FILE, LOG_FILE + '.old')
+        fs.renameSync(LOG_FILE, `${LOG_FILE}.old`)
       }
     }
-    
+
     fs.appendFileSync(LOG_FILE, logEntry)
   } catch (err) {
     console.error('Failed to write security log:', err)
@@ -60,8 +66,8 @@ export function clearSecurityLogs() {
     if (fs.existsSync(LOG_FILE)) {
       fs.unlinkSync(LOG_FILE)
     }
-    if (fs.existsSync(LOG_FILE + '.old')) {
-      fs.unlinkSync(LOG_FILE + '.old')
+    if (fs.existsSync(`${LOG_FILE}.old`)) {
+      fs.unlinkSync(`${LOG_FILE}.old`)
     }
   } catch (err) {
     console.error('Failed to clear security logs:', err)

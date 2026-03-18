@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Activity, Bell, Calendar, Clock, Power, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -9,14 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Clock,
-  Bell,
-  Power,
-  Activity,
-  Calendar,
-  RotateCcw,
-} from 'lucide-react'
 
 interface UsageStats {
   totalSessions: number
@@ -42,25 +35,25 @@ export default function StatsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [daysToShow, setDaysToShow] = useState(7)
-  
+
   console.log('StatsTab rendering, loading:', loading, 'stats:', stats)
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       console.log('Loading stats...')
       const [allStats, recent] = await Promise.all([
         window.settingsAPI.getStats(),
-        window.settingsAPI.getRecentStats(daysToShow)
+        window.settingsAPI.getRecentStats(daysToShow),
       ])
       console.log('Stats loaded:', allStats)
       console.log('Recent stats:', recent)
-      
+
       if (!allStats) {
         throw new Error('No stats data received')
       }
-      
+
       setStats(allStats)
       setRecentStats(recent || [])
     } catch (err) {
@@ -69,29 +62,31 @@ export default function StatsTab() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [daysToShow])
 
   useEffect(() => {
     loadStats()
-  }, [daysToShow])
+  }, [loadStats])
 
   const handleReset = async () => {
     const confirmed = confirm(
       'Delete statistics data?\n\n' +
-      'This will permanently delete your desktop app usage statistics:\n' +
-      '• App usage history\n' +
-      '• Daily activity records\n' +
-      '• Session tracking data\n\n' +
-      '✓ Your WhatsApp messages and chats are not affected\n' +
-      '✓ Your WhatsApp account data is safe\n\n' +
-      'Only desktop app statistics will be deleted.\n\n' +
-      'This action cannot be undone. Continue?'
+        'This will permanently delete your desktop app usage statistics:\n' +
+        '• App usage history\n' +
+        '• Daily activity records\n' +
+        '• Session tracking data\n\n' +
+        '✓ Your WhatsApp messages and chats are not affected\n' +
+        '✓ Your WhatsApp account data is safe\n\n' +
+        'Only desktop app statistics will be deleted.\n\n' +
+        'This action cannot be undone. Continue?'
     )
-    
+
     if (confirmed) {
       const success = await window.settingsAPI.resetStats()
       if (success) {
-        alert('Desktop app statistics have been deleted.\n\nYour WhatsApp messages and data are unaffected.')
+        alert(
+          'Desktop app statistics have been deleted.\n\nYour WhatsApp messages and data are unaffected.'
+        )
         loadStats()
       } else {
         alert('Failed to delete statistics. Please try again.')
@@ -102,7 +97,7 @@ export default function StatsTab() {
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`
     }
@@ -119,7 +114,7 @@ export default function StatsTab() {
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    
+
     if (date.toDateString() === today.toDateString()) {
       return 'Today'
     } else if (date.toDateString() === yesterday.toDateString()) {
@@ -164,9 +159,8 @@ export default function StatsTab() {
     )
   }
 
-  const avgSessionDuration = stats.totalSessions > 0 
-    ? Math.floor(stats.totalUsageTime / stats.totalSessions)
-    : 0
+  const avgSessionDuration =
+    stats.totalSessions > 0 ? Math.floor(stats.totalUsageTime / stats.totalSessions) : 0
 
   return (
     <div className="space-y-6">
@@ -224,9 +218,7 @@ export default function StatsTab() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalNotifications}</div>
-            <p className="text-xs text-muted-foreground">
-              Total notifications sent
-            </p>
+            <p className="text-xs text-muted-foreground">Total notifications sent</p>
           </CardContent>
         </Card>
 
@@ -238,9 +230,9 @@ export default function StatsTab() {
           <CardContent>
             <div className="text-2xl font-bold">{formatDate(stats.lastLaunch)}</div>
             <p className="text-xs text-muted-foreground">
-              {new Date(stats.lastLaunch).toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              {new Date(stats.lastLaunch).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
               })}
             </p>
           </CardContent>
@@ -256,9 +248,7 @@ export default function StatsTab() {
                 <Calendar className="h-5 w-5" />
                 Daily Activity
               </CardTitle>
-              <CardDescription>
-                Your WhatsApp Desktop activity over time
-              </CardDescription>
+              <CardDescription>Your WhatsApp Desktop activity over time</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button
@@ -310,11 +300,9 @@ export default function StatsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentStats.reverse().map((day) => (
+                {recentStats.reverse().map(day => (
                   <TableRow key={day.date}>
-                    <TableCell className="font-medium">
-                      {formatRelativeDate(day.date)}
-                    </TableCell>
+                    <TableCell className="font-medium">{formatRelativeDate(day.date)}</TableCell>
                     <TableCell className="text-right">{day.sessionCount}</TableCell>
                     <TableCell className="text-right">
                       {formatDuration(day.totalSessionDuration)}

@@ -6,6 +6,6 @@ export function getSystemInfo() {
     nodeVersion: process.versions.node,
     platform: process.platform,
     isWayland: process.env.XDG_SESSION_TYPE === 'wayland',
-    isGnome: (process.env.XDG_CURRENT_DESKTOP || '').includes('GNOME')
+    isGnome: (process.env.XDG_CURRENT_DESKTOP || '').includes('GNOME'),
   }
 }

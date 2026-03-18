@@ -4,7 +4,7 @@ import { getMainWindow } from './main-window'
 
 export function showWelcomeDialog() {
   const mainWin = getMainWindow()
-  
+
   const welcomeWindow = new BrowserWindow({
     width: 600,
     height: 550,
@@ -15,12 +15,12 @@ export function showWelcomeDialog() {
     icon: getAppIcon(),
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
-    }
+      contextIsolation: false,
+    },
   })
-  
+
   welcomeWindow.setMenu(null)
-  
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -126,6 +126,6 @@ export function showWelcomeDialog() {
 </body>
 </html>
   `
-  
+
   welcomeWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
 }

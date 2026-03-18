@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { initStatsManager, getStatsManager, __resetStatsManagerForTests } from './stats'
-import fs from 'fs'
-import path from 'path'
-import os from 'os'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { __resetStatsManagerForTests, getStatsManager, initStatsManager } from './stats'
 
 describe('StatsManager', () => {
   let testDataPath: string
@@ -13,7 +13,7 @@ describe('StatsManager', () => {
   beforeEach(() => {
     // Reset singleton
     __resetStatsManagerForTests()
-    
+
     testDataPath = path.join(os.tmpdir(), `test-stats-${Date.now()}`)
     dataDir = path.join(testDataPath, '.local', 'share', 'whatsapp-desktop')
     fs.mkdirSync(testDataPath, { recursive: true })
@@ -25,15 +25,15 @@ describe('StatsManager', () => {
     if (manager) {
       try {
         manager.close()
-      } catch (e) {
+      } catch (_e) {
         // Ignore close errors
       }
       manager = null
     }
-    
+
     // Reset singleton
     __resetStatsManagerForTests()
-    
+
     if (fs.existsSync(testDataPath)) {
       fs.rmSync(testDataPath, { recursive: true, force: true })
     }
@@ -74,9 +74,9 @@ describe('StatsManager', () => {
             windowFocusCount: 5,
             notificationsSent: 3,
             settingsOpened: 1,
-            dndToggleCount: 2
-          }
-        ]
+            dndToggleCount: 2,
+          },
+        ],
       }
       fs.writeFileSync(jsonPath, JSON.stringify(existingStats, null, 2))
 
@@ -87,14 +87,14 @@ describe('StatsManager', () => {
       expect(stats.totalUsageTime).toBe(3600)
       expect(stats.totalNotifications).toBe(10)
       expect(stats.appStartCount).toBe(5)
-      
+
       const dailyStats = manager.getRecentStats(1)
       expect(dailyStats).toHaveLength(1)
       expect(dailyStats[0].date).toBe('2026-03-15')
       expect(dailyStats[0].sessionCount).toBe(2)
-      
+
       // Verify backup was created
-      expect(fs.existsSync(jsonPath + '.backup')).toBe(true)
+      expect(fs.existsSync(`${jsonPath}.backup`)).toBe(true)
     })
 
     it('should handle corrupted JSON file gracefully', () => {
@@ -113,10 +113,10 @@ describe('StatsManager', () => {
   describe('App Launch Tracking', () => {
     it('should increment appStartCount on trackAppLaunch', () => {
       manager = initStatsManager()
-      
+
       manager.trackAppLaunch()
       expect(manager.getStats().appStartCount).toBe(1)
-      
+
       manager.trackAppLaunch()
       expect(manager.getStats().appStartCount).toBe(2)
     })
@@ -124,9 +124,9 @@ describe('StatsManager', () => {
     it('should update lastLaunch timestamp', () => {
       manager = initStatsManager()
       const beforeLaunch = new Date()
-      
+
       manager.trackAppLaunch()
-      
+
       const lastLaunch = new Date(manager.getStats().lastLaunch)
       expect(lastLaunch.getTime()).toBeGreaterThanOrEqual(beforeLaunch.getTime())
     })
@@ -146,27 +146,27 @@ describe('StatsManager', () => {
   describe('Session Tracking', () => {
     it('should increment totalSessions on startSession', () => {
       manager = initStatsManager()
-      
+
       manager.startSession()
       expect(manager.getStats().totalSessions).toBe(1)
-      
+
       manager.startSession()
       expect(manager.getStats().totalSessions).toBe(2)
     })
 
     it('should track session duration on endSession', async () => {
       manager = initStatsManager()
-      
+
       manager.startSession()
-      
+
       // Wait a bit
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       manager.endSession()
-      
+
       const stats = manager.getStats()
       expect(stats.totalUsageTime).toBeGreaterThan(0)
-      
+
       const today = new Date().toISOString().split('T')[0]
       const dailyStats = manager.getRecentStats(1)
       expect(dailyStats).toHaveLength(1)
@@ -183,10 +183,10 @@ describe('StatsManager', () => {
   describe('Notification Tracking', () => {
     it('should increment notification count', () => {
       manager = initStatsManager()
-      
+
       manager.trackNotification()
       expect(manager.getStats().totalNotifications).toBe(1)
-      
+
       manager.trackNotification()
       manager.trackNotification()
       expect(manager.getStats().totalNotifications).toBe(3)
@@ -194,13 +194,13 @@ describe('StatsManager', () => {
 
     it('should update daily notification count', () => {
       manager = initStatsManager()
-      
+
       manager.trackNotification()
       manager.trackNotification()
 
       const today = new Date().toISOString().split('T')[0]
       const dailyStats = manager.getRecentStats(1)
-      
+
       expect(dailyStats).toHaveLength(1)
       expect(dailyStats[0].date).toBe(today)
       expect(dailyStats[0].notificationsSent).toBe(2)
@@ -210,13 +210,13 @@ describe('StatsManager', () => {
   describe('Window Focus Tracking', () => {
     it('should track window focus events', () => {
       manager = initStatsManager()
-      
+
       manager.trackWindowFocus()
       manager.trackWindowFocus()
 
       const today = new Date().toISOString().split('T')[0]
       const dailyStats = manager.getRecentStats(1)
-      
+
       expect(dailyStats).toHaveLength(1)
       expect(dailyStats[0].date).toBe(today)
       expect(dailyStats[0].windowFocusCount).toBe(2)
@@ -226,12 +226,12 @@ describe('StatsManager', () => {
   describe('Settings Opened Tracking', () => {
     it('should track settings opens', () => {
       manager = initStatsManager()
-      
+
       manager.trackSettingsOpened()
 
       const today = new Date().toISOString().split('T')[0]
       const dailyStats = manager.getRecentStats(1)
-      
+
       expect(dailyStats).toHaveLength(1)
       expect(dailyStats[0].date).toBe(today)
       expect(dailyStats[0].settingsOpened).toBe(1)
@@ -241,13 +241,13 @@ describe('StatsManager', () => {
   describe('DND Toggle Tracking', () => {
     it('should track DND toggles', () => {
       manager = initStatsManager()
-      
+
       manager.trackDndToggle()
       manager.trackDndToggle()
 
       const today = new Date().toISOString().split('T')[0]
       const dailyStats = manager.getRecentStats(1)
-      
+
       expect(dailyStats).toHaveLength(1)
       expect(dailyStats[0].date).toBe(today)
       expect(dailyStats[0].dndToggleCount).toBe(2)
@@ -257,7 +257,7 @@ describe('StatsManager', () => {
   describe('Recent Stats', () => {
     it('should return stats for last N days', () => {
       manager = initStatsManager()
-      
+
       // Track some activity today
       manager.trackNotification()
 
@@ -269,16 +269,16 @@ describe('StatsManager', () => {
     it('should return empty array if no stats', () => {
       manager = initStatsManager()
       const recent = manager.getRecentStats(30)
-      
+
       expect(recent).toEqual([])
     })
 
     it('should return all stats when days = 0', () => {
       manager = initStatsManager()
-      
+
       manager.trackNotification()
       manager.trackWindowFocus()
-      
+
       const allStats = manager.getRecentStats(0)
       expect(allStats.length).toBeGreaterThanOrEqual(1)
     })
@@ -287,7 +287,7 @@ describe('StatsManager', () => {
   describe('Reset Stats', () => {
     it('should reset all stats to zero', () => {
       manager = initStatsManager()
-      
+
       manager.trackAppLaunch()
       manager.trackNotification()
       manager.trackWindowFocus()
@@ -306,7 +306,7 @@ describe('StatsManager', () => {
 
     it('should persist reset to database', () => {
       manager = initStatsManager()
-      
+
       manager.trackAppLaunch()
       manager.resetStats()
 
@@ -339,9 +339,9 @@ describe('StatsManager', () => {
   describe('Error Handling', () => {
     it('should handle database errors gracefully', () => {
       manager = initStatsManager()
-      
+
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
+
       // Close database to simulate error condition
       manager.close()
 
@@ -349,11 +349,11 @@ describe('StatsManager', () => {
       expect(() => {
         try {
           manager.trackNotification()
-        } catch (e) {
+        } catch (_e) {
           // Expected to fail, but shouldn't crash the app
         }
       }).not.toThrow()
-      
+
       consoleErrorSpy.mockRestore()
     })
   })
@@ -361,10 +361,10 @@ describe('StatsManager', () => {
   describe('Date Range Queries', () => {
     it('should get stats by date range', () => {
       manager = initStatsManager()
-      
+
       manager.trackNotification()
       const today = new Date().toISOString().split('T')[0]
-      
+
       const stats = manager.getStatsByDateRange(today, today)
       expect(stats).toHaveLength(1)
       expect(stats[0].date).toBe(today)
@@ -372,9 +372,9 @@ describe('StatsManager', () => {
 
     it('should return total tracked days', () => {
       manager = initStatsManager()
-      
+
       manager.trackNotification()
-      
+
       const totalDays = manager.getTotalDays()
       expect(totalDays).toBeGreaterThanOrEqual(1)
     })

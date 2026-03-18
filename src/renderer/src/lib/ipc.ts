@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 declare global {
   interface Window {
@@ -21,44 +21,43 @@ export function useSettings() {
   const [settings, setSettings] = useState<any>({})
   const [autoStart, setAutoStartState] = useState(false)
   const [loading, setLoading] = useState(true)
-  
+
   useEffect(() => {
     // Load initial settings
-    Promise.all([
-      window.settingsAPI.getSettings(),
-      window.settingsAPI.getAutostart()
-    ]).then(([settingsData, autoStartData]) => {
-      setSettings(settingsData)
-      setAutoStartState(autoStartData)
-      setLoading(false)
-    })
-    
+    Promise.all([window.settingsAPI.getSettings(), window.settingsAPI.getAutostart()]).then(
+      ([settingsData, autoStartData]) => {
+        setSettings(settingsData)
+        setAutoStartState(autoStartData)
+        setLoading(false)
+      }
+    )
+
     // Listen for DND changes from tray menu or OS
-    const cleanup = window.settingsAPI.onDndChanged((enabled) => {
+    const cleanup = window.settingsAPI.onDndChanged(enabled => {
       console.log('[Settings] Received DND change:', enabled)
       setSettings((prev: any) => ({ ...prev, dndMode: enabled }))
     })
-    
+
     return cleanup
   }, [])
-  
+
   const setSetting = async (key: string, value: any) => {
     await window.settingsAPI.setSetting(key, value)
     setSettings((prev: any) => ({ ...prev, [key]: value }))
   }
-  
+
   const setAutoStart = async (enabled: boolean) => {
     const success = await window.settingsAPI.setAutostart(enabled)
     if (success) {
       setAutoStartState(enabled)
     }
   }
-  
+
   return {
     settings,
     setSetting,
     autoStart,
     setAutoStart,
-    loading
+    loading,
   }
 }

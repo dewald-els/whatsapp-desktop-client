@@ -1,21 +1,21 @@
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { app } from 'electron'
-import * as fs from 'fs'
-import * as path from 'path'
 
 export interface Settings {
   // General
   startMinimized: boolean
   closeToTray: boolean
-  
+
   // Notifications
   notificationsEnabled: boolean
   showPreview: boolean
   notificationSound: boolean
   dndMode: boolean
-  
+
   // Appearance
   theme: 'light' | 'dark' | 'system'
-  
+
   // Internal
   firstRun: boolean
   failedShortcuts: string[]
@@ -38,7 +38,7 @@ const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   firstRun: true,
   failedShortcuts: [],
-  sessionType: ''
+  sessionType: '',
 }
 
 class SettingsManager {
@@ -47,15 +47,16 @@ class SettingsManager {
 
   constructor() {
     // Use OS-specific data directories
-    const dataPath = process.platform === 'linux' 
-      ? path.join(app.getPath('home'), '.local', 'share', 'whatsapp-desktop')
-      : app.getPath('userData')
-    
+    const dataPath =
+      process.platform === 'linux'
+        ? path.join(app.getPath('home'), '.local', 'share', 'whatsapp-desktop')
+        : app.getPath('userData')
+
     // Ensure directory exists
     if (!fs.existsSync(dataPath)) {
       fs.mkdirSync(dataPath, { recursive: true })
     }
-    
+
     this.settingsPath = path.join(dataPath, 'settings.json')
     this.settings = this.loadSettings()
   }
@@ -124,4 +125,3 @@ export function getSettingsManager(): SettingsManager {
 export function __resetSettingsManagerForTests(): void {
   settingsManager = null
 }
-

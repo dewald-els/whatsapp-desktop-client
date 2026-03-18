@@ -15,6 +15,10 @@
     "package:deb": "bun run build && electron-builder --linux deb",
     "package:rpm": "bun run build && electron-builder --linux rpm",
     "start": "electron .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:main": "vitest --config vitest.config.main.ts",
@@ -51,6 +55,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.8",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

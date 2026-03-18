@@ -25,15 +25,15 @@ async function detectOSDndStatus(): Promise<boolean> {
       'org.freedesktop.Notifications',
       '/org/freedesktop/Notifications'
     )
-    
+
     const notificationsInterface = obj.getInterface('org.freedesktop.Notifications')
-    
+
     // Try to get the Inhibited property via Properties interface
     try {
       const propertiesInterface = obj.getInterface('org.freedesktop.DBus.Properties')
       const inhibited = await propertiesInterface.Get('org.freedesktop.Notifications', 'Inhibited')
       console.log('[DND Detect] Got Inhibited property via Properties interface:', inhibited)
-      
+
       // Handle Variant type from @particle/dbus-next
       if (inhibited && typeof inhibited === 'object' && 'value' in inhibited) {
         const value = inhibited.value
@@ -43,21 +43,24 @@ async function detectOSDndStatus(): Promise<boolean> {
       return inhibited === true
     } catch (error) {
       console.log('[DND Detect] Properties.Get failed, trying direct property access:', error)
-      
+
       // Try direct property access
       try {
         const inhibited = await notificationsInterface.Inhibited()
         console.log('[DND Detect] Got Inhibited via direct call:', inhibited)
         return inhibited === true
       } catch (error2) {
-        console.log('[DND Detect] Direct property access failed, trying GetInhibited method:', error2)
-        
+        console.log(
+          '[DND Detect] Direct property access failed, trying GetInhibited method:',
+          error2
+        )
+
         // Property might not exist, try method call
         try {
           const result = await notificationsInterface.GetInhibited()
           console.log('[DND Detect] Got result from GetInhibited():', result)
           return result === true
-        } catch (error3) {
+        } catch (_error3) {
           console.log('[DND Detect] All detection methods failed, assuming not inhibited')
           // If all fail, assume not inhibited
           return false
@@ -78,13 +81,15 @@ async function syncWithOSDnd(): Promise<void> {
     const settingsManager = getSettingsManager()
     const osDndEnabled = await detectOSDndStatus()
     const appDndEnabled = settingsManager.get('dndMode')
-    
+
     // Only update if there's a difference
     if (osDndEnabled !== appDndEnabled) {
-      console.log(`[DND Sync] OS=${osDndEnabled}, App=${appDndEnabled} -> Updating app to ${osDndEnabled}`)
+      console.log(
+        `[DND Sync] OS=${osDndEnabled}, App=${appDndEnabled} -> Updating app to ${osDndEnabled}`
+      )
       settingsManager.set('dndMode', osDndEnabled)
       updateTrayMenu()
-      
+
       // Notify all renderer windows about the DND change
       BrowserWindow.getAllWindows().forEach(window => {
         window.webContents.send('dnd-changed', osDndEnabled)
@@ -112,21 +117,24 @@ async function subscribeToDBusSignals(): Promise<void> {
         'org.freedesktop.Notifications',
         '/org/freedesktop/Notifications'
       )
-      
+
       const propertiesInterface = obj.getInterface('org.freedesktop.DBus.Properties')
-      
+
       // Listen for PropertiesChanged signal
-      propertiesInterface.on('PropertiesChanged', (iface: string, changedProps: any, invalidatedProps: string[]) => {
-        if (iface === 'org.freedesktop.Notifications') {
-          console.log('[DND Monitor] Notifications properties changed:', changedProps)
-          
-          if ('Inhibited' in changedProps || invalidatedProps.includes('Inhibited')) {
-            console.log('[DND Monitor] Inhibited property changed, syncing...')
-            syncWithOSDnd()
+      propertiesInterface.on(
+        'PropertiesChanged',
+        (iface: string, changedProps: any, invalidatedProps: string[]) => {
+          if (iface === 'org.freedesktop.Notifications') {
+            console.log('[DND Monitor] Notifications properties changed:', changedProps)
+
+            if ('Inhibited' in changedProps || invalidatedProps.includes('Inhibited')) {
+              console.log('[DND Monitor] Inhibited property changed, syncing...')
+              syncWithOSDnd()
+            }
           }
         }
-      })
-      
+      )
+
       console.log('[DND Monitor] ✓ Subscribed to FreeDesktop Notifications PropertiesChanged')
     } catch (error) {
       console.warn('[DND Monitor] Could not subscribe to FreeDesktop Notifications signals:', error)
@@ -137,12 +145,12 @@ async function subscribeToDBusSignals(): Promise<void> {
       // KDE uses different signals - let's try to catch config changes
       dbusConnection.on('message', (msg: any) => {
         // Monitor any notification-related signals
-        if (msg.interface && msg.interface.includes('Notification')) {
+        if (msg.interface?.includes('Notification')) {
           console.log('[DND Monitor] KDE notification signal received, syncing...')
           syncWithOSDnd()
         }
       })
-      
+
       console.log('[DND Monitor] ✓ Monitoring KDE notification signals')
     } catch (error) {
       console.warn('[DND Monitor] Could not set up KDE signal monitoring:', error)
@@ -155,21 +163,20 @@ async function subscribeToDBusSignals(): Promise<void> {
         'ca.desrt.dconf',
         '/ca/desrt/dconf/Writer/user'
       )
-      
+
       const dconfInterface = gsettingsObj.getInterface('ca.desrt.dconf.Writer')
-      
-      dconfInterface.on('Notify', (path: string, keys: string[], tag: string) => {
+
+      dconfInterface.on('Notify', (path: string, keys: string[], _tag: string) => {
         if (path.includes('notifications') || keys.some(k => k.includes('banner'))) {
           console.log('[DND Monitor] GNOME notifications settings changed, syncing...')
           syncWithOSDnd()
         }
       })
-      
+
       console.log('[DND Monitor] ✓ Subscribed to GNOME GSettings notifications')
     } catch (error) {
       console.warn('[DND Monitor] Could not subscribe to GNOME GSettings signals:', error)
     }
-
   } catch (error) {
     console.error('[DND Monitor] Error setting up D-Bus subscriptions:', error)
   }
@@ -190,20 +197,19 @@ export async function startOSDndMonitoring(): Promise<void> {
 
     // Initial sync
     await syncWithOSDnd()
-    
+
     // Subscribe to D-Bus signals for real-time updates
     await subscribeToDBusSignals()
-    
+
     // Fallback: Still do periodic checks every 60 seconds in case signals are missed
     const fallbackIntervalId = setInterval(() => {
       console.log('[DND Monitor] Running periodic fallback check...')
       syncWithOSDnd()
     }, 60000)
-    
+
     cleanupFunctions.push(() => clearInterval(fallbackIntervalId))
-    
+
     console.log('[DND Monitor] ✓ Real-time DND monitoring active')
-    
   } catch (error) {
     console.error('[DND Monitor] Failed to start DND monitoring:', error)
     console.log('[DND Monitor] OS DND sync will be disabled, but manual DND toggle will still work')
@@ -215,11 +221,13 @@ export async function startOSDndMonitoring(): Promise<void> {
  */
 export function stopOSDndMonitoring(): void {
   console.log('[DND Monitor] Cleaning up DND monitoring...')
-  
+
   // Run all cleanup functions
-  cleanupFunctions.forEach(cleanup => cleanup())
+  cleanupFunctions.forEach(cleanup => {
+    cleanup()
+  })
   cleanupFunctions = []
-  
+
   // Close D-Bus connection
   if (dbusConnection) {
     try {
@@ -229,6 +237,6 @@ export function stopOSDndMonitoring(): void {
     }
     dbusConnection = null
   }
-  
+
   console.log('[DND Monitor] ✓ Cleanup complete')
 }

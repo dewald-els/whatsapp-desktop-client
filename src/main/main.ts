@@ -1,13 +1,13 @@
 import { app, BrowserWindow } from 'electron'
+import { registerIpcHandlers } from './ipc-handlers'
+import { initSettingsManager } from './settings-manager'
+import { registerShortcuts } from './shortcuts'
+import { getStatsManager, initStatsManager } from './stats'
+import { createTray } from './tray'
+import { startOSDndMonitoring } from './utils/dnd-detector'
+import { getSystemInfo } from './utils/system-info'
 import { createMainWindow, getMainWindow } from './windows/main-window'
 import { showWelcomeDialog } from './windows/welcome-dialog'
-import { createTray } from './tray'
-import { registerShortcuts } from './shortcuts'
-import { registerIpcHandlers } from './ipc-handlers'
-import { initStatsManager, getStatsManager } from './stats'
-import { initSettingsManager, getSettingsManager } from './settings-manager'
-import { getSystemInfo } from './utils/system-info'
-import { startOSDndMonitoring } from './utils/dnd-detector'
 
 // Enable Wayland support for global shortcuts if needed
 const systemInfo = getSystemInfo()
@@ -37,38 +37,38 @@ if (!gotTheLock) {
       mainWindow.focus()
     }
   })
-  
+
   app.whenReady().then(() => {
     // Initialize settings manager
     const settingsManager = initSettingsManager()
-    
+
     // Initialize stats manager
     const statsManager = initStatsManager()
     statsManager.trackAppLaunch()
-    
+
     // Register IPC handlers
     registerIpcHandlers()
-    
+
     // Create main window
     createMainWindow()
-    
+
     // Create system tray
     createTray()
-    
+
     // Register global shortcuts
     registerShortcuts()
-    
+
     // Start monitoring OS DND status (Linux only)
     if (process.platform === 'linux') {
       startOSDndMonitoring()
     }
-    
+
     // Show welcome dialog on first run
     if (settingsManager.get('firstRun')) {
       showWelcomeDialog()
       settingsManager.set('firstRun', false)
     }
-    
+
     // Determine if window should be shown
     const mainWindow = getMainWindow()
     if (mainWindow) {
@@ -81,7 +81,7 @@ if (!gotTheLock) {
           console.error('Failed to track window focus:', error)
         }
       })
-      
+
       // Track sessions
       mainWindow.webContents.on('did-finish-load', () => {
         try {
@@ -91,7 +91,7 @@ if (!gotTheLock) {
           console.error('Failed to start session:', error)
         }
       })
-      
+
       if (startHidden || settingsManager.get('startMinimized')) {
         // Start hidden in tray
         mainWindow.hide()
@@ -112,7 +112,7 @@ app.on('window-all-closed', () => {
   } catch (error) {
     console.error('Failed to end session:', error)
   }
-  
+
   if (process.platform !== 'darwin') {
     app.quit()
   }

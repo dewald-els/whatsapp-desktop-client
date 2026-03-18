@@ -1,8 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { initSettingsManager, getSettingsManager, __resetSettingsManagerForTests } from './settings-manager'
-import fs from 'fs'
-import path from 'path'
-import os from 'os'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  __resetSettingsManagerForTests,
+  getSettingsManager,
+  initSettingsManager,
+} from './settings-manager'
 
 describe('SettingsManager', () => {
   let testDataPath: string
@@ -12,7 +16,7 @@ describe('SettingsManager', () => {
   beforeEach(() => {
     // Reset singleton
     __resetSettingsManagerForTests()
-    
+
     // Create a fresh test directory for each test
     testDataPath = path.join(os.tmpdir(), `test-settings-${Date.now()}`)
     dataDir = path.join(testDataPath, '.local', 'share', 'whatsapp-desktop')
@@ -23,7 +27,7 @@ describe('SettingsManager', () => {
   afterEach(() => {
     // Reset singleton
     __resetSettingsManagerForTests()
-    
+
     // Clean up test directory
     if (fs.existsSync(testDataPath)) {
       fs.rmSync(testDataPath, { recursive: true, force: true })
@@ -45,7 +49,7 @@ describe('SettingsManager', () => {
         theme: 'system',
         firstRun: true,
         failedShortcuts: [],
-        sessionType: ''
+        sessionType: '',
       })
     })
 
@@ -74,7 +78,7 @@ describe('SettingsManager', () => {
         theme: 'dark' as const,
         firstRun: false,
         failedShortcuts: ['Ctrl+Shift+W'],
-        sessionType: 'x11'
+        sessionType: 'x11',
       }
       fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2))
 
@@ -89,7 +93,7 @@ describe('SettingsManager', () => {
       fs.mkdirSync(dataDir, { recursive: true })
       const partialSettings = {
         dndMode: true,
-        theme: 'dark'
+        theme: 'dark',
       }
       fs.writeFileSync(settingsPath, JSON.stringify(partialSettings, null, 2))
 
@@ -122,7 +126,7 @@ describe('SettingsManager', () => {
         theme: 'system',
         firstRun: true,
         failedShortcuts: [],
-        sessionType: ''
+        sessionType: '',
       })
     })
   })
@@ -130,7 +134,7 @@ describe('SettingsManager', () => {
   describe('Get Settings', () => {
     it('should get individual setting by key', () => {
       const manager = initSettingsManager()
-      
+
       expect(manager.get('dndMode')).toBe(false)
       expect(manager.get('theme')).toBe('system')
       expect(manager.get('notificationsEnabled')).toBe(true)
@@ -159,34 +163,34 @@ describe('SettingsManager', () => {
   describe('Set Settings', () => {
     it('should set individual boolean setting', () => {
       const manager = initSettingsManager()
-      
+
       manager.set('dndMode', true)
       expect(manager.get('dndMode')).toBe(true)
-      
+
       manager.set('notificationsEnabled', false)
       expect(manager.get('notificationsEnabled')).toBe(false)
     })
 
     it('should set theme setting', () => {
       const manager = initSettingsManager()
-      
+
       manager.set('theme', 'dark')
       expect(manager.get('theme')).toBe('dark')
-      
+
       manager.set('theme', 'light')
       expect(manager.get('theme')).toBe('light')
     })
 
     it('should set array setting', () => {
       const manager = initSettingsManager()
-      
+
       manager.set('failedShortcuts', ['Ctrl+Shift+W', 'Ctrl+Shift+D'])
       expect(manager.get('failedShortcuts')).toEqual(['Ctrl+Shift+W', 'Ctrl+Shift+D'])
     })
 
     it('should set windowBounds setting', () => {
       const manager = initSettingsManager()
-      
+
       const bounds = { width: 1920, height: 1080, x: 100, y: 200 }
       manager.set('windowBounds', bounds)
       expect(manager.get('windowBounds')).toEqual(bounds)
@@ -194,7 +198,7 @@ describe('SettingsManager', () => {
 
     it('should persist settings to file immediately', () => {
       const manager = initSettingsManager()
-      
+
       manager.set('dndMode', true)
       manager.set('theme', 'dark')
 
@@ -218,7 +222,7 @@ describe('SettingsManager', () => {
   describe('Reset Settings', () => {
     it('should reset all settings to defaults', () => {
       const manager = initSettingsManager()
-      
+
       // Change some settings
       manager.set('dndMode', true)
       manager.set('theme', 'dark')
@@ -235,7 +239,7 @@ describe('SettingsManager', () => {
 
     it('should persist reset to file', () => {
       const manager = initSettingsManager()
-      
+
       manager.set('dndMode', true)
       manager.reset()
 
@@ -275,7 +279,7 @@ describe('SettingsManager', () => {
     it('should handle read permission errors gracefully', () => {
       // Create settings file
       fs.writeFileSync(settingsPath, JSON.stringify({ dndMode: true }))
-      
+
       // Mock fs.readFileSync to throw error
       const originalReadFile = fs.readFileSync
       vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
@@ -294,7 +298,7 @@ describe('SettingsManager', () => {
 
     it('should handle write errors gracefully', () => {
       const manager = initSettingsManager()
-      
+
       // Mock fs.writeFileSync to throw error
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {
@@ -303,7 +307,7 @@ describe('SettingsManager', () => {
 
       // Should not throw
       expect(() => manager.set('dndMode', true)).not.toThrow()
-      
+
       // Should log error
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Error saving settings'),
@@ -317,23 +321,23 @@ describe('SettingsManager', () => {
   describe('Type Safety', () => {
     it('should handle all valid theme values', () => {
       const manager = initSettingsManager()
-      
+
       manager.set('theme', 'light')
       expect(manager.get('theme')).toBe('light')
-      
+
       manager.set('theme', 'dark')
       expect(manager.get('theme')).toBe('dark')
-      
+
       manager.set('theme', 'system')
       expect(manager.get('theme')).toBe('system')
     })
 
     it('should handle optional windowBounds', () => {
       const manager = initSettingsManager()
-      
+
       // Initially undefined
       expect(manager.get('windowBounds')).toBeUndefined()
-      
+
       // Can be set
       manager.set('windowBounds', { width: 800, height: 600 })
       expect(manager.get('windowBounds')).toEqual({ width: 800, height: 600 })

@@ -1,5 +1,5 @@
+import path from 'node:path'
 import { nativeTheme } from 'electron'
-import path from 'path'
 
 const ASSETS_DIR = path.join(__dirname, '../../../assets')
 

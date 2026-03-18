@@ -1,38 +1,47 @@
+import path from 'node:path'
+import AutoLaunch from 'auto-launch'
 import { ipcMain, Notification } from 'electron'
 import { getSettingsManager, type Settings } from './settings-manager'
+import { getStatsManager } from './stats'
+import { updateTrayMenu } from './tray'
 import { getSystemInfo } from './utils/system-info'
 import { getMainWindow, showMainWindow } from './windows/main-window'
-import { updateTrayMenu } from './tray'
-import { getStatsManager } from './stats'
-import AutoLaunch from 'auto-launch'
-import path from 'path'
 
 const autoLauncher = new AutoLaunch({
   name: 'WhatsApp Desktop',
-  path: process.execPath
+  path: process.execPath,
 })
 
 export function registerIpcHandlers() {
   const settingsManager = getSettingsManager()
-  
+
   // Get all settings
   ipcMain.handle('get-settings', () => {
     return settingsManager.getAll()
   })
-  
+
   // Set individual setting
-  ipcMain.handle('set-setting', (event, key: keyof Settings, value: any) => {
+  ipcMain.handle('set-setting', (_event, key: keyof Settings, value: any) => {
     // Validate key is a valid settings key
     const validKeys: (keyof Settings)[] = [
-      'windowBounds', 'startMinimized', 'closeToTray', 'notificationsEnabled',
-      'showPreview', 'notificationSound', 'dndMode', 'theme', 'firstRun', 'failedShortcuts', 'sessionType'
+      'windowBounds',
+      'startMinimized',
+      'closeToTray',
+      'notificationsEnabled',
+      'showPreview',
+      'notificationSound',
+      'dndMode',
+      'theme',
+      'firstRun',
+      'failedShortcuts',
+      'sessionType',
     ]
-    
+
     if (!validKeys.includes(key)) {
       console.error('Invalid settings key:', key)
       return false
     }
-    
+
     // Basic type validation based on key
     const typeValidation: Record<string, string> = {
       startMinimized: 'boolean',
@@ -43,17 +52,17 @@ export function registerIpcHandlers() {
       dndMode: 'boolean',
       firstRun: 'boolean',
       theme: 'string',
-      sessionType: 'string'
+      sessionType: 'string',
     }
-    
+
     const expectedType = typeValidation[key]
     if (expectedType && typeof value !== expectedType) {
       console.error(`Invalid type for ${key}: expected ${expectedType}, got ${typeof value}`)
       return false
     }
-    
+
     settingsManager.set(key, value as any)
-    
+
     // Handle side effects
     if (key === 'dndMode') {
       updateTrayMenu()
@@ -65,10 +74,10 @@ export function registerIpcHandlers() {
         console.error('Failed to track DND toggle:', error)
       }
     }
-    
+
     return true
   })
-  
+
   // Auto-start management
   ipcMain.handle('get-autostart', async () => {
     try {
@@ -78,8 +87,8 @@ export function registerIpcHandlers() {
       return false
     }
   })
-  
-  ipcMain.handle('set-autostart', async (event, enabled: boolean) => {
+
+  ipcMain.handle('set-autostart', async (_event, enabled: boolean) => {
     try {
       if (enabled) {
         const startMinimized = settingsManager.get('startMinimized')
@@ -97,17 +106,17 @@ export function registerIpcHandlers() {
       return false
     }
   })
-  
+
   // Get system info
   ipcMain.handle('get-system-info', () => {
     return getSystemInfo()
   })
-  
+
   // WhatsApp notification handler
-  ipcMain.on('whatsapp-notification', (event, data) => {
+  ipcMain.on('whatsapp-notification', (_event, data) => {
     handleWhatsAppNotification(data)
   })
-  
+
   // Statistics handlers
   ipcMain.handle('get-stats', () => {
     try {
@@ -118,8 +127,8 @@ export function registerIpcHandlers() {
       return null
     }
   })
-  
-  ipcMain.handle('get-recent-stats', (event, days: number = 30) => {
+
+  ipcMain.handle('get-recent-stats', (_event, days: number = 30) => {
     try {
       const statsManager = getStatsManager()
       return statsManager.getRecentStats(days)
@@ -128,7 +137,7 @@ export function registerIpcHandlers() {
       return []
     }
   })
-  
+
   ipcMain.handle('reset-stats', () => {
     try {
       const statsManager = getStatsManager()
@@ -147,54 +156,54 @@ function handleWhatsAppNotification(data: any) {
     console.error('Invalid notification data')
     return
   }
-  
+
   const { title, body, icon, tag } = data
-  
+
   // Validate required fields are strings
   if (typeof title !== 'string' || typeof body !== 'string') {
     console.error('Invalid notification data types')
     return
   }
-  
+
   const settingsManager = getSettingsManager()
-  
+
   // Check DND mode
   if (settingsManager.get('dndMode')) {
     console.log('DND mode active, suppressing notification')
     return
   }
-  
+
   // Check if notifications enabled
   if (!settingsManager.get('notificationsEnabled')) {
     return
   }
-  
+
   // Check message preview setting
   const showPreview = settingsManager.get('showPreview')
   const notificationBody = showPreview ? body : 'New message'
-  
+
   const notification = new Notification({
     title,
     body: notificationBody,
     icon: icon || path.join(__dirname, '../../assets/whatsapp.png'),
     urgency: 'normal',
     timeoutType: 'default',
-    silent: !settingsManager.get('notificationSound')
+    silent: !settingsManager.get('notificationSound'),
   })
-  
+
   // Click handler - show window and attempt to focus chat
   notification.on('click', () => {
     showMainWindow()
-    
+
     // Try to focus the specific chat
     const mainWindow = getMainWindow()
     if (mainWindow) {
       focusChat(mainWindow, String(title || ''), String(tag || ''))
     }
   })
-  
+
   notification.show()
-  
+
   // Track notification
   try {
     const statsManager = getStatsManager()
@@ -217,11 +226,12 @@ function focusChat(mainWindow: any, chatName: string, tag: string) {
       .replace(/</g, '\\x3C')
       .replace(/>/g, '\\x3E')
   }
-  
+
   const safeChatName = sanitize(chatName)
   const safeTag = sanitize(tag)
-  
-  mainWindow.webContents.executeJavaScript(`
+
+  mainWindow.webContents
+    .executeJavaScript(`
     (function() {
       // Extract chat ID from tag if available
       let chatId = "${safeTag}";
@@ -248,7 +258,8 @@ function focusChat(mainWindow: any, chatName: string, tag: string) {
       
       return false;
     })();
-  `).catch(err => {
-    console.error('Failed to focus chat:', err)
-  })
+  `)
+    .catch(err => {
+      console.error('Failed to focus chat:', err)
+    })
 }
