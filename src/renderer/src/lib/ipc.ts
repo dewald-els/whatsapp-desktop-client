@@ -11,7 +11,7 @@ declare global {
       getStats: () => Promise<any>
       getRecentStats: (days: number) => Promise<any[]>
       resetStats: () => Promise<boolean>
-      onDndChanged: (callback: (enabled: boolean) => void) => void
+      onDndChanged: (callback: (enabled: boolean) => void) => () => void
       onNavigateToTab: (callback: (tab: string) => void) => void
     }
   }
@@ -33,10 +33,13 @@ export function useSettings() {
       setLoading(false)
     })
     
-    // Listen for DND changes from tray menu
-    window.settingsAPI.onDndChanged((enabled) => {
+    // Listen for DND changes from tray menu or OS
+    const cleanup = window.settingsAPI.onDndChanged((enabled) => {
+      console.log('[Settings] Received DND change:', enabled)
       setSettings((prev: any) => ({ ...prev, dndMode: enabled }))
     })
+    
+    return cleanup
   }, [])
   
   const setSetting = async (key: string, value: any) => {

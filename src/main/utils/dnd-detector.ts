@@ -1,9 +1,9 @@
-import * as dbus from 'dbus-next'
+import * as dbus from '@particle/dbus-next'
 import { BrowserWindow } from 'electron'
 import { getSettingsManager } from '../settings-manager'
 import { updateTrayMenu } from '../tray'
 
-const { systemBus, sessionBus } = dbus
+const { sessionBus } = dbus
 
 let dbusConnection: dbus.MessageBus | null = null
 let cleanupFunctions: (() => void)[] = []
@@ -18,6 +18,8 @@ async function detectOSDndStatus(): Promise<boolean> {
       dbusConnection = sessionBus()
     }
 
+    console.log('[DND Detect] Checking OS DND status...')
+
     // Check FreeDesktop Notifications interface for inhibit status
     const obj = await dbusConnection.getProxyObject(
       'org.freedesktop.Notifications',
@@ -26,22 +28,44 @@ async function detectOSDndStatus(): Promise<boolean> {
     
     const notificationsInterface = obj.getInterface('org.freedesktop.Notifications')
     
-    // Try to get the Inhibited property
+    // Try to get the Inhibited property via Properties interface
     try {
-      const inhibited = await notificationsInterface.Inhibited()
+      const propertiesInterface = obj.getInterface('org.freedesktop.DBus.Properties')
+      const inhibited = await propertiesInterface.Get('org.freedesktop.Notifications', 'Inhibited')
+      console.log('[DND Detect] Got Inhibited property via Properties interface:', inhibited)
+      
+      // Handle Variant type from @particle/dbus-next
+      if (inhibited && typeof inhibited === 'object' && 'value' in inhibited) {
+        const value = inhibited.value
+        console.log('[DND Detect] Extracted value from Variant:', value)
+        return value === true
+      }
       return inhibited === true
     } catch (error) {
-      // Property might not exist, try method call
+      console.log('[DND Detect] Properties.Get failed, trying direct property access:', error)
+      
+      // Try direct property access
       try {
-        const result = await notificationsInterface.GetInhibited()
-        return result === true
+        const inhibited = await notificationsInterface.Inhibited()
+        console.log('[DND Detect] Got Inhibited via direct call:', inhibited)
+        return inhibited === true
       } catch (error2) {
-        // If both fail, assume not inhibited
-        return false
+        console.log('[DND Detect] Direct property access failed, trying GetInhibited method:', error2)
+        
+        // Property might not exist, try method call
+        try {
+          const result = await notificationsInterface.GetInhibited()
+          console.log('[DND Detect] Got result from GetInhibited():', result)
+          return result === true
+        } catch (error3) {
+          console.log('[DND Detect] All detection methods failed, assuming not inhibited')
+          // If all fail, assume not inhibited
+          return false
+        }
       }
     }
   } catch (error) {
-    console.error('Error detecting OS DND status via D-Bus:', error)
+    console.error('[DND Detect] Error detecting OS DND status via D-Bus:', error)
     return false
   }
 }
@@ -182,14 +206,7 @@ export async function startOSDndMonitoring(): Promise<void> {
     
   } catch (error) {
     console.error('[DND Monitor] Failed to start DND monitoring:', error)
-    
-    // Ultimate fallback: poll every 30 seconds if D-Bus fails completely
-    console.log('[DND Monitor] Falling back to polling mode (30s interval)')
-    const intervalId = setInterval(() => {
-      syncWithOSDnd()
-    }, 30000)
-    
-    cleanupFunctions.push(() => clearInterval(intervalId))
+    console.log('[DND Monitor] OS DND sync will be disabled, but manual DND toggle will still work')
   }
 }
 

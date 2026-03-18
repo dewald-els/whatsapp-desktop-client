@@ -10,10 +10,13 @@ export default function NotificationsTab() {
   
   // Listen for DND changes and show a brief notification
   useEffect(() => {
-    window.settingsAPI.onDndChanged((enabled) => {
+    const cleanup = window.settingsAPI.onDndChanged((enabled) => {
+      console.log('[NotificationsTab] DND changed to:', enabled)
       setShowDndNotification(true)
       setTimeout(() => setShowDndNotification(false), 3000)
     })
+    
+    return cleanup
   }, [])
   
   return (

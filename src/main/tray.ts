@@ -34,6 +34,10 @@ export function updateTrayMenu() {
   const mainWindow = getMainWindow()
   const dndEnabled = settingsManager.get('dndMode')
   
+  // Update tooltip to reflect DND status
+  const tooltip = dndEnabled ? 'WhatsApp Desktop (Do Not Disturb)' : 'WhatsApp Desktop'
+  tray.setToolTip(tooltip)
+  
   const contextMenu = Menu.buildFromTemplate([
     {
       label: mainWindow?.isVisible() ? 'Hide WhatsApp' : 'Show WhatsApp',

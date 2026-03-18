@@ -23,9 +23,11 @@ contextBridge.exposeInMainWorld('settingsAPI', {
   
   // Listen for DND changes
   onDndChanged: (callback: (enabled: boolean) => void) => {
-    ipcRenderer.on('dnd-changed', (event, enabled) => {
+    const listener = (event: any, enabled: boolean) => {
       callback(enabled)
-    })
+    }
+    ipcRenderer.on('dnd-changed', listener)
+    return () => ipcRenderer.removeListener('dnd-changed', listener)
   },
   
   // Listen for tab navigation
