@@ -1,6 +1,6 @@
 import { BrowserWindow, app } from 'electron'
 import path from 'path'
-import store from '../store'
+import { getSettingsManager } from '../settings-manager'
 import { getAppIcon } from '../utils/theme-detector'
 import { logSecurityEvent } from '../utils/security-logger'
 
@@ -8,7 +8,8 @@ let mainWindow: BrowserWindow | null = null
 let isQuitting = false
 
 export function createMainWindow(): BrowserWindow {
-  const bounds = store.get('windowBounds')
+  const settingsManager = getSettingsManager()
+  const bounds = settingsManager.get('windowBounds') || { width: 1024, height: 768 }
   
   mainWindow = new BrowserWindow({
     width: bounds.width,
@@ -194,8 +195,9 @@ export function createMainWindow(): BrowserWindow {
   
   // Show window when ready to avoid blank screen
   mainWindow.webContents.on('did-finish-load', () => {
+    const settingsManager = getSettingsManager()
     // Only auto-show if not starting minimized
-    const startMinimized = store.get('startMinimized', true)
+    const startMinimized = settingsManager.get('startMinimized')
     const args = process.argv.slice(1)
     const startHidden = args.includes('--hidden')
     
@@ -210,7 +212,8 @@ export function createMainWindow(): BrowserWindow {
   
   // Handle close button - minimize to tray instead of quit
   mainWindow.on('close', (event) => {
-    if (!isQuitting && store.get('closeToTray')) {
+    const settingsManager = getSettingsManager()
+    if (!isQuitting && settingsManager.get('closeToTray')) {
       event.preventDefault()
       mainWindow?.hide()
     }
@@ -225,8 +228,9 @@ export function createMainWindow(): BrowserWindow {
 
 function saveWindowBounds() {
   if (mainWindow && !mainWindow.isDestroyed()) {
+    const settingsManager = getSettingsManager()
     const bounds = mainWindow.getBounds()
-    store.set('windowBounds', bounds)
+    settingsManager.set('windowBounds', bounds)
   }
 }
 

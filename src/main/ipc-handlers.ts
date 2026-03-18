@@ -1,8 +1,9 @@
 import { ipcMain, Notification } from 'electron'
-import store, { StoreSchema } from './store'
+import { getSettingsManager, type Settings } from './settings-manager'
 import { getSystemInfo } from './utils/system-info'
 import { getMainWindow, showMainWindow } from './windows/main-window'
 import { updateTrayMenu } from './tray'
+import { getStatsManager } from './stats'
 import AutoLaunch from 'auto-launch'
 import path from 'path'
 
@@ -12,21 +13,23 @@ const autoLauncher = new AutoLaunch({
 })
 
 export function registerIpcHandlers() {
+  const settingsManager = getSettingsManager()
+  
   // Get all settings
   ipcMain.handle('get-settings', () => {
-    return store.store
+    return settingsManager.getAll()
   })
   
   // Set individual setting
-  ipcMain.handle('set-setting', (event, key: keyof StoreSchema, value: any) => {
-    // Validate key is a valid store key
-    const validKeys: (keyof StoreSchema)[] = [
+  ipcMain.handle('set-setting', (event, key: keyof Settings, value: any) => {
+    // Validate key is a valid settings key
+    const validKeys: (keyof Settings)[] = [
       'windowBounds', 'startMinimized', 'closeToTray', 'notificationsEnabled',
       'showPreview', 'notificationSound', 'dndMode', 'theme', 'firstRun', 'failedShortcuts', 'sessionType'
     ]
     
     if (!validKeys.includes(key)) {
-      console.error('Invalid store key:', key)
+      console.error('Invalid settings key:', key)
       return false
     }
     
@@ -49,11 +52,18 @@ export function registerIpcHandlers() {
       return false
     }
     
-    store.set(key, value)
+    settingsManager.set(key, value as any)
     
     // Handle side effects
     if (key === 'dndMode') {
       updateTrayMenu()
+      // Track DND toggle
+      try {
+        const statsManager = getStatsManager()
+        statsManager.trackDndToggle()
+      } catch (error) {
+        console.error('Failed to track DND toggle:', error)
+      }
     }
     
     return true
@@ -72,7 +82,7 @@ export function registerIpcHandlers() {
   ipcMain.handle('set-autostart', async (event, enabled: boolean) => {
     try {
       if (enabled) {
-        const startMinimized = store.get('startMinimized', false)
+        const startMinimized = settingsManager.get('startMinimized')
         if (startMinimized) {
           autoLauncher.opts.isHidden = ['--hidden']
         }
@@ -97,6 +107,38 @@ export function registerIpcHandlers() {
   ipcMain.on('whatsapp-notification', (event, data) => {
     handleWhatsAppNotification(data)
   })
+  
+  // Statistics handlers
+  ipcMain.handle('get-stats', () => {
+    try {
+      const statsManager = getStatsManager()
+      return statsManager.getStats()
+    } catch (error) {
+      console.error('Failed to get stats:', error)
+      return null
+    }
+  })
+  
+  ipcMain.handle('get-recent-stats', (event, days: number = 30) => {
+    try {
+      const statsManager = getStatsManager()
+      return statsManager.getRecentStats(days)
+    } catch (error) {
+      console.error('Failed to get recent stats:', error)
+      return []
+    }
+  })
+  
+  ipcMain.handle('reset-stats', () => {
+    try {
+      const statsManager = getStatsManager()
+      statsManager.resetStats()
+      return true
+    } catch (error) {
+      console.error('Failed to reset stats:', error)
+      return false
+    }
+  })
 }
 
 function handleWhatsAppNotification(data: any) {
@@ -114,19 +156,21 @@ function handleWhatsAppNotification(data: any) {
     return
   }
   
+  const settingsManager = getSettingsManager()
+  
   // Check DND mode
-  if (store.get('dndMode', false)) {
+  if (settingsManager.get('dndMode')) {
     console.log('DND mode active, suppressing notification')
     return
   }
   
   // Check if notifications enabled
-  if (!store.get('notificationsEnabled', true)) {
+  if (!settingsManager.get('notificationsEnabled')) {
     return
   }
   
   // Check message preview setting
-  const showPreview = store.get('showPreview', true)
+  const showPreview = settingsManager.get('showPreview')
   const notificationBody = showPreview ? body : 'New message'
   
   const notification = new Notification({
@@ -135,7 +179,7 @@ function handleWhatsAppNotification(data: any) {
     icon: icon || path.join(__dirname, '../../assets/whatsapp.png'),
     urgency: 'normal',
     timeoutType: 'default',
-    silent: !store.get('notificationSound', true)
+    silent: !settingsManager.get('notificationSound')
   })
   
   // Click handler - show window and attempt to focus chat
@@ -150,6 +194,14 @@ function handleWhatsAppNotification(data: any) {
   })
   
   notification.show()
+  
+  // Track notification
+  try {
+    const statsManager = getStatsManager()
+    statsManager.trackNotification()
+  } catch (error) {
+    console.error('Failed to track notification:', error)
+  }
 }
 
 function focusChat(mainWindow: any, chatName: string, tag: string) {

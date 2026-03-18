@@ -4,13 +4,17 @@ import { showWelcomeDialog } from './windows/welcome-dialog'
 import { createTray } from './tray'
 import { registerShortcuts } from './shortcuts'
 import { registerIpcHandlers } from './ipc-handlers'
-import store from './store'
+import { initStatsManager, getStatsManager } from './stats'
+import { initSettingsManager, getSettingsManager } from './settings-manager'
 import { getSystemInfo } from './utils/system-info'
+import { startOSDndMonitoring } from './utils/dnd-detector'
 
 // Enable Wayland support for global shortcuts if needed
 const systemInfo = getSystemInfo()
 if (systemInfo.isWayland) {
   app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
+  // Disable color management features that may not be supported by all Wayland compositors
+  app.commandLine.appendSwitch('disable-features', 'WaylandColorManagement')
   console.log('Wayland detected - enabled GlobalShortcutsPortal')
 }
 
@@ -35,6 +39,13 @@ if (!gotTheLock) {
   })
   
   app.whenReady().then(() => {
+    // Initialize settings manager
+    const settingsManager = initSettingsManager()
+    
+    // Initialize stats manager
+    const statsManager = initStatsManager()
+    statsManager.trackAppLaunch()
+    
     // Register IPC handlers
     registerIpcHandlers()
     
@@ -47,16 +58,41 @@ if (!gotTheLock) {
     // Register global shortcuts
     registerShortcuts()
     
+    // Start monitoring OS DND status (Linux only)
+    if (process.platform === 'linux') {
+      startOSDndMonitoring()
+    }
+    
     // Show welcome dialog on first run
-    if (store.get('firstRun', true)) {
+    if (settingsManager.get('firstRun')) {
       showWelcomeDialog()
-      store.set('firstRun', false)
+      settingsManager.set('firstRun', false)
     }
     
     // Determine if window should be shown
     const mainWindow = getMainWindow()
     if (mainWindow) {
-      if (startHidden || store.get('startMinimized', true)) {
+      // Track window focus events
+      mainWindow.on('focus', () => {
+        try {
+          const statsManager = getStatsManager()
+          statsManager.trackWindowFocus()
+        } catch (error) {
+          console.error('Failed to track window focus:', error)
+        }
+      })
+      
+      // Track sessions
+      mainWindow.webContents.on('did-finish-load', () => {
+        try {
+          const statsManager = getStatsManager()
+          statsManager.startSession()
+        } catch (error) {
+          console.error('Failed to start session:', error)
+        }
+      })
+      
+      if (startHidden || settingsManager.get('startMinimized')) {
         // Start hidden in tray
         mainWindow.hide()
       } else {
@@ -69,6 +105,14 @@ if (!gotTheLock) {
 
 // Quit when all windows are closed (except on macOS)
 app.on('window-all-closed', () => {
+  // End session before quitting
+  try {
+    const statsManager = getStatsManager()
+    statsManager.endSession()
+  } catch (error) {
+    console.error('Failed to end session:', error)
+  }
+  
   if (process.platform !== 'darwin') {
     app.quit()
   }

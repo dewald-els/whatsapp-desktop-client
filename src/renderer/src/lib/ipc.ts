@@ -8,7 +8,11 @@ declare global {
       getAutostart: () => Promise<boolean>
       setAutostart: (enabled: boolean) => Promise<boolean>
       getSystemInfo: () => Promise<any>
+      getStats: () => Promise<any>
+      getRecentStats: (days: number) => Promise<any[]>
+      resetStats: () => Promise<boolean>
       onDndChanged: (callback: (enabled: boolean) => void) => void
+      onNavigateToTab: (callback: (tab: string) => void) => void
     }
   }
 }

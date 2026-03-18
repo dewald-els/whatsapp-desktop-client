@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"bun run dev:vite\" \"bun run dev:electron\"",
     "dev:vite": "vite",
-    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.node.json && electron . --dev --ozone-platform=x11",
+    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.node.json && electron . --dev",
     "build": "bun run build:main && bun run build:renderer",
     "build:main": "tsc -p tsconfig.node.json",
     "build:renderer": "vite build",
@@ -15,12 +15,17 @@
     "package:rpm": "bun run build && electron-builder --linux rpm",
     "start": "electron ."
   },
-  "keywords": ["whatsapp", "electron", "desktop"],
+  "keywords": [
+    "whatsapp",
+    "electron",
+    "desktop"
+  ],
   "author": "",
   "license": "MIT",
   "homepage": "https://github.com/dewald-els/whatsapp-desktop",
   "type": "commonjs",
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-radio-group": "^1.3.8",
     "@radix-ui/react-slot": "^1.2.4",
@@ -29,6 +34,8 @@
     "auto-launch": "^5.0.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "dbus-next": "^0.10.2",
     "electron-store": "^11.0.2",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",

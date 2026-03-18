@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -5,6 +6,15 @@ import { useSettings } from '@/lib/ipc'
 
 export default function NotificationsTab() {
   const { settings, setSetting } = useSettings()
+  const [showDndNotification, setShowDndNotification] = useState(false)
+  
+  // Listen for DND changes and show a brief notification
+  useEffect(() => {
+    window.settingsAPI.onDndChanged((enabled) => {
+      setShowDndNotification(true)
+      setTimeout(() => setShowDndNotification(false), 3000)
+    })
+  }, [])
   
   return (
     <Card>
@@ -61,6 +71,14 @@ export default function NotificationsTab() {
         <div className="pt-6 border-t">
           <h3 className="text-sm font-medium mb-4">Do Not Disturb</h3>
           
+          {showDndNotification && (
+            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                DND mode {settings.dndMode ? 'enabled' : 'disabled'} (synced with OS)
+              </p>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="dnd-mode">Enable Do Not Disturb</Label>
@@ -73,6 +91,13 @@ export default function NotificationsTab() {
               checked={settings.dndMode}
               onCheckedChange={(val) => setSetting('dndMode', val)}
             />
+          </div>
+          
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              <strong>Tip:</strong> This app automatically syncs with your operating system's Do Not Disturb settings. 
+              If your OS is in DND mode, the app will respect that setting.
+            </p>
           </div>
           
           <p className="text-sm text-muted-foreground mt-4">

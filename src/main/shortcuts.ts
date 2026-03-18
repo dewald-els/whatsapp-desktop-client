@@ -1,10 +1,13 @@
 import { globalShortcut, app } from 'electron'
 import { getMainWindow, toggleMainWindow } from './windows/main-window'
+import { createSettingsWindow } from './windows/settings-window'
 import { toggleDND } from './tray'
-import store from './store'
+import { getSettingsManager } from './settings-manager'
 import { getSystemInfo } from './utils/system-info'
 
 export function registerShortcuts() {
+  const settingsManager = getSettingsManager()
+  
   const shortcuts = [
     {
       key: 'CommandOrControl+Shift+W',
@@ -15,6 +18,13 @@ export function registerShortcuts() {
       key: 'CommandOrControl+Shift+D',
       description: 'Toggle Do Not Disturb',
       handler: toggleDND
+    },
+    {
+      key: 'CommandOrControl+,',
+      description: 'Open settings',
+      handler: () => {
+        createSettingsWindow()
+      }
     }
   ]
   
@@ -31,7 +41,7 @@ export function registerShortcuts() {
   })
   
   // Store failed shortcuts for display in settings
-  store.set('failedShortcuts', failed)
+  settingsManager.set('failedShortcuts', failed)
   
   // Log Wayland warning if applicable
   const systemInfo = getSystemInfo()

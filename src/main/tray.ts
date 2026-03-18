@@ -1,7 +1,8 @@
-import { Tray, Menu, nativeTheme, app } from 'electron'
+import { Tray, Menu, nativeTheme, app, BrowserWindow } from 'electron'
 import { getTrayIcon } from './utils/theme-detector'
 import { getMainWindow, toggleMainWindow, setQuitting } from './windows/main-window'
-import store from './store'
+import { createSettingsWindow } from './windows/settings-window'
+import { getSettingsManager } from './settings-manager'
 
 let tray: Tray | null = null
 
@@ -29,8 +30,9 @@ export function createTray() {
 export function updateTrayMenu() {
   if (!tray || tray.isDestroyed()) return
   
+  const settingsManager = getSettingsManager()
   const mainWindow = getMainWindow()
-  const dndEnabled = store.get('dndMode', false)
+  const dndEnabled = settingsManager.get('dndMode')
   
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -46,6 +48,15 @@ export function updateTrayMenu() {
     },
     { type: 'separator' },
     {
+      label: 'Statistics',
+      click: () => createSettingsWindow('stats')
+    },
+    {
+      label: 'Settings',
+      click: () => createSettingsWindow()
+    },
+    { type: 'separator' },
+    {
       label: 'Quit',
       click: () => {
         setQuitting(true)
@@ -58,9 +69,10 @@ export function updateTrayMenu() {
 }
 
 export function toggleDND() {
-  const current = store.get('dndMode', false)
+  const settingsManager = getSettingsManager()
+  const current = settingsManager.get('dndMode')
   const newState = !current
-  store.set('dndMode', newState)
+  settingsManager.set('dndMode', newState)
   
   // Update tooltip
   if (tray && !tray.isDestroyed()) {
@@ -69,6 +81,11 @@ export function toggleDND() {
   }
   
   updateTrayMenu()
+  
+  // Notify all renderer windows about the DND change
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('dnd-changed', newState)
+  })
 }
 
 export function getTray(): Tray | null {

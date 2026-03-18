@@ -2,23 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useSettings } from '@/lib/ipc'
-import { useEffect } from 'react'
 import { Palette } from 'lucide-react'
 
 export default function AppearanceTab() {
   const { settings, setSetting } = useSettings()
-  
-  // Apply theme to settings window immediately
-  useEffect(() => {
-    const theme = settings.theme || 'system'
-    
-    if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      document.documentElement.classList.toggle('dark', prefersDark)
-    } else {
-      document.documentElement.classList.toggle('dark', theme === 'dark')
-    }
-  }, [settings.theme])
   
   return (
     <Card>

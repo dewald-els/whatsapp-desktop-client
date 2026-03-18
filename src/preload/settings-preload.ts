@@ -16,10 +16,22 @@ contextBridge.exposeInMainWorld('settingsAPI', {
   // System info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
   
+  // Statistics
+  getStats: () => ipcRenderer.invoke('get-stats'),
+  getRecentStats: (days: number) => ipcRenderer.invoke('get-recent-stats', days),
+  resetStats: () => ipcRenderer.invoke('reset-stats'),
+  
   // Listen for DND changes
   onDndChanged: (callback: (enabled: boolean) => void) => {
     ipcRenderer.on('dnd-changed', (event, enabled) => {
       callback(enabled)
+    })
+  },
+  
+  // Listen for tab navigation
+  onNavigateToTab: (callback: (tab: string) => void) => {
+    ipcRenderer.on('navigate-to-tab', (event, tab) => {
+      callback(tab)
     })
   }
 })
