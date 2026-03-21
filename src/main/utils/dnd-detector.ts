@@ -31,6 +31,9 @@ async function detectOSDndStatus(): Promise<boolean> {
     // Try to get the Inhibited property via Properties interface
     try {
       const propertiesInterface = obj.getInterface('org.freedesktop.DBus.Properties')
+      if (!propertiesInterface.Get) {
+        throw new Error('Properties interface does not have Get method')
+      }
       const inhibited = await propertiesInterface.Get('org.freedesktop.Notifications', 'Inhibited')
       console.log('[DND Detect] Got Inhibited property via Properties interface:', inhibited)
 
@@ -46,6 +49,9 @@ async function detectOSDndStatus(): Promise<boolean> {
 
       // Try direct property access
       try {
+        if (!notificationsInterface.Inhibited) {
+          throw new Error('Inhibited property not available')
+        }
         const inhibited = await notificationsInterface.Inhibited()
         console.log('[DND Detect] Got Inhibited via direct call:', inhibited)
         return inhibited === true
@@ -57,6 +63,9 @@ async function detectOSDndStatus(): Promise<boolean> {
 
         // Property might not exist, try method call
         try {
+          if (!notificationsInterface.GetInhibited) {
+            throw new Error('GetInhibited method not available')
+          }
           const result = await notificationsInterface.GetInhibited()
           console.log('[DND Detect] Got result from GetInhibited():', result)
           return result === true

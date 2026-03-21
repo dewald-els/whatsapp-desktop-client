@@ -34,7 +34,6 @@ export function useSettings() {
 
     // Listen for DND changes from tray menu or OS
     const cleanup = window.settingsAPI.onDndChanged(enabled => {
-      console.log('[Settings] Received DND change:', enabled)
       setSettings((prev: any) => ({ ...prev, dndMode: enabled }))
     })
 

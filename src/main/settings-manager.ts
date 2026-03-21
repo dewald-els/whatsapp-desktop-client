@@ -20,6 +20,7 @@ export interface Settings {
   firstRun: boolean
   failedShortcuts: string[]
   sessionType: string
+  electronVersion?: string // Runtime value, not persisted
   windowBounds?: {
     width: number
     height: number

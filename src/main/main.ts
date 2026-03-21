@@ -4,7 +4,7 @@ import { initSettingsManager } from './settings-manager'
 import { registerShortcuts } from './shortcuts'
 import { getStatsManager, initStatsManager } from './stats'
 import { createTray } from './tray'
-import { startOSDndMonitoring } from './utils/dnd-detector'
+import { startOSDndMonitoring, stopOSDndMonitoring } from './utils/dnd-detector'
 import { getSystemInfo } from './utils/system-info'
 import { createMainWindow, getMainWindow } from './windows/main-window'
 import { showWelcomeDialog } from './windows/welcome-dialog'
@@ -111,6 +111,15 @@ app.on('window-all-closed', () => {
     statsManager.endSession()
   } catch (error) {
     console.error('Failed to end session:', error)
+  }
+
+  // Clean up DND monitoring
+  if (process.platform === 'linux') {
+    try {
+      stopOSDndMonitoring()
+    } catch (error) {
+      console.error('Failed to stop DND monitoring:', error)
+    }
   }
 
   if (process.platform !== 'darwin') {

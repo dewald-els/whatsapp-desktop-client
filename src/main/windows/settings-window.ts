@@ -71,8 +71,6 @@ export function createSettingsWindow(initialTab?: string): BrowserWindow {
   // Development: Load Vite dev server
   if (process.argv.includes('--dev')) {
     settingsWindow.loadURL('http://localhost:5173')
-    // Open DevTools in development
-    settingsWindow.webContents.openDevTools()
   } else {
     // Production: Load bundled HTML
     settingsWindow.loadFile(path.join(__dirname, '../renderer/index.html'))

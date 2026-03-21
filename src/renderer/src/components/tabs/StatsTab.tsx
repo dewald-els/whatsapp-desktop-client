@@ -36,19 +36,14 @@ export default function StatsTab() {
   const [error, setError] = useState<string | null>(null)
   const [daysToShow, setDaysToShow] = useState(7)
 
-  console.log('StatsTab rendering, loading:', loading, 'stats:', stats)
-
   const loadStats = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      console.log('Loading stats...')
       const [allStats, recent] = await Promise.all([
         window.settingsAPI.getStats(),
         window.settingsAPI.getRecentStats(daysToShow),
       ])
-      console.log('Stats loaded:', allStats)
-      console.log('Recent stats:', recent)
 
       if (!allStats) {
         throw new Error('No stats data received')
@@ -300,7 +295,7 @@ export default function StatsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentStats.reverse().map(day => (
+                {[...recentStats].reverse().map(day => (
                   <TableRow key={day.date}>
                     <TableCell className="font-medium">{formatRelativeDate(day.date)}</TableCell>
                     <TableCell className="text-right">{day.sessionCount}</TableCell>

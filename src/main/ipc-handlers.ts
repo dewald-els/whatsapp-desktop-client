@@ -7,7 +7,7 @@ import { updateTrayMenu } from './tray'
 import { getSystemInfo } from './utils/system-info'
 import { getMainWindow, showMainWindow } from './windows/main-window'
 
-const autoLauncher = new AutoLaunch({
+let autoLauncher = new AutoLaunch({
   name: 'WhatsApp Desktop',
   path: process.execPath,
 })
@@ -17,7 +17,12 @@ export function registerIpcHandlers() {
 
   // Get all settings
   ipcMain.handle('get-settings', () => {
-    return settingsManager.getAll()
+    const systemInfo = getSystemInfo()
+    return {
+      ...settingsManager.getAll(),
+      electronVersion: systemInfo.electronVersion,
+      sessionType: systemInfo.sessionType,
+    }
   })
 
   // Set individual setting
@@ -92,9 +97,12 @@ export function registerIpcHandlers() {
     try {
       if (enabled) {
         const startMinimized = settingsManager.get('startMinimized')
-        if (startMinimized) {
-          autoLauncher.opts.isHidden = ['--hidden']
-        }
+        // Recreate autoLauncher with updated options
+        autoLauncher = new AutoLaunch({
+          name: 'WhatsApp Desktop',
+          path: process.execPath,
+          isHidden: startMinimized,
+        })
         await autoLauncher.enable()
         return true
       } else {
@@ -259,7 +267,7 @@ function focusChat(mainWindow: any, chatName: string, tag: string) {
       return false;
     })();
   `)
-    .catch(err => {
+    .catch((err: unknown) => {
       console.error('Failed to focus chat:', err)
     })
 }
